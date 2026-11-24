@@ -414,7 +414,7 @@ try{SALT=crypto.getRandomValues(new Uint8Array(16));KEY=await dk(p,SALT);NICK=n;
 ST=s;ACC=true;await save();tt('가입했어요. 기록이 암호화돼요');if(x){$('lk').hidden=true;go('start')}else R.set()}catch(e){KEY=null;ACC=null;tt('이 환경에서는 계정을 만들 수 없어요')}}
 function showAuth(){var v=vault(),o=$('au');$('lk').hidden=false;
 o.innerHTML=v?'<h1 class="brand2"><span class="wm">Trace</span><span class="tg">삶에 남겨진 흔적, 회복의 발자취</span></h1><p class="m">'+esc(v.n)+'님, 비밀번호를 입력해 주세요.</p><input type="password" id="lp" autocomplete="current-password" aria-label="비밀번호" placeholder="비밀번호" style="text-align:center" onkeydown="if(event.key===\'Enter\')unlock()"><button class="b" onclick="unlock()">로그인</button><button class="x" onclick="forgot()" style="margin-top:12px">비밀번호를 잊었어요</button>':'<h1 class="brand2"><span class="wm">Trace</span><span class="tg">삶에 남겨진 흔적, 회복의 발자취</span></h1><p class="m">회원가입을 하면 기록이 비밀번호로 암호화돼 이 기기에 저장돼요.</p><input type="text" id="lan" placeholder="닉네임 (실명이 아니어도 돼요)" aria-label="닉네임" autocomplete="off"><input type="password" id="lap" placeholder="비밀번호" aria-label="비밀번호" autocomplete="new-password" style="margin-top:8px"><input type="password" id="lap2" placeholder="비밀번호 확인" aria-label="비밀번호 확인" autocomplete="new-password" style="margin-top:8px"><p class="m" style="font-size:12px;margin:6px 0 0">비밀번호는 자유롭게 정해도 돼요. 다만 잊으면 복구할 수 없어요.</p><button class="b" onclick="signup(\'l\')">회원가입</button><button class="x" onclick="guest()" style="margin-top:12px">가입 없이 시작하기</button><p class="m" style="font-size:12px">가입하지 않으면 기록이 암호화되지 않아요. 나중에 설정에서 가입할 수 있어요.</p>'}
-function guest(){$('lk').hidden=true;go('start')}
+function guest(){$('lk').hidden=true;go(hasData()?'home':'start');if(hasData())tt('저장된 기록을 불러왔어요')}
 async function unlock(){var v=vault(),p=$('lp').value;try{var k=await dk(p,ub(v.s)),d=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(v.i)},k,ub(v.c));ST=JSON.parse(new TextDecoder().decode(d));KEY=k;SALT=ub(v.s);NICK=v.n;ACC=true;$('lk').hidden=true;$('lp').value='';go('home')}catch(e){tt('비밀번호가 맞지 않아요');$('lp').value=''}}
 async function lockNow(){if(!ACC)return;clearTimeout(pt);try{await save()}catch(e){}ACC=null;KEY=null;ST={};showAuth();go('start')}
 function forgot(){if(confirm('비밀번호를 잊으면 복구할 수 없어요. 이 기기의 기록과 계정을 모두 지우고 새로 시작할까요?')){wipe();showAuth();go('start')}}
@@ -426,7 +426,7 @@ async function unlockPin(){try{if(await hp($('pkin').value)===L('dt_pin','')){$(
 function forgotPin(){if(ACC){$('pk').hidden=true;lockNow()}else if(confirm('PIN을 잊으면 이 기기의 기록을 모두 지우고 잠금을 풀어요. 계속할까요?')){wipe();$('pk').hidden=true}}
 document.addEventListener('visibilitychange',function(){if(!document.hidden)return;if(L('dt_pin',''))$('pk').hidden=false;else lockNow()});
 
-async function exp(){var d=window.claude&&await claude.use('downloads');if(!d){tt('이 화면에서는 저장할 수 없어요');return}
+async function exp(){var d=await dlr();
 var o=[],c=function(i){return $(i).checked},A='\n';
 if(c('x1')){o.push('[기억 정리 메모]');L('dt_tl',[]).forEach(function(x){o.push('- '+x.w+': '+x.n)})}
 if(c('x2')){o.push(A+'[편지]');L('dt_jn',[]).forEach(function(x){o.push(A+(x.to||'나에게')+' ('+fd(x.t)+')'+A+x.c+A+(x.fm||''))})}
@@ -777,7 +777,7 @@ $('cdone').innerHTML=n>=18?'<div class="al">'+pMsg(n)+(d?'<br><span class="m">�
 $('cmem').innerHTML=STG.map(function(g,i){var l=m[i]||[];return '<div class="mm"><b>'+(i+1)+' '+g.n+'</b>'+(l.slice(0,2).map(function(e){return '<p class="hd">'+esc(e.c)+'</p>'}).join('')||'<p class="m">아직 남긴 기억이 없어요.</p>')+'<button class="x" onclick="openStar('+i+')">이 별 열기 · 기억 추가</button></div>'}).join('');
 $('csh').innerHTML='<p class="m">원할 때만, 믿는 사람에게 별자리를 나눌 수 있어요. 이 앱은 아무에게도 자동으로 보내지 않아요. 아래에서 고른 내용만 글로 만들어 복사하거나 저장하고, 보내는 건 내가 직접 해요. 한번 보낸 글은 되돌릴 수 없어요.</p><label class="k"><input type="checkbox" checked disabled> 별자리 이름과 모인 별빛 수 (기본 포함)</label>'+STG.map(function(g,i){return '<label class="k"><input type="checkbox" id="sh'+i+'"'+((m[i]||[]).length?'':' disabled')+'> '+(i+1)+'번 별에 남긴 기억 포함</label>'}).join('')+'<div id="shr"></div><button class="b b2" onclick="shBuild(0)">나눌 글 만들어 복사하기</button><button class="b b2" onclick="shBuild(1)">텍스트 파일로 저장</button>'};
 function shText(){var m=smAll(),t=['✦ '+(L('dt_cn','')||'나의 별자리')+' ✦','Trace · 별빛 '+sum(cnt())+' / 18'];STG.forEach(function(g,i){var e=$('sh'+i);if(e&&e.checked&&(m[i]||[]).length){t.push('','['+(i+1)+'. '+g.n+']');m[i].forEach(function(x){t.push(x.c)})}});return t.join('\n')}
-async function shBuild(save){var t=shText();if(save){var d=window.claude&&await claude.use('downloads');if(!d){tt('이 화면에서는 저장할 수 없어요');return}try{await d.save({filename:'Trace_별자리.txt',data:t});tt('저장했어요')}catch(e){if(!e||e.code!=='declined')tt('저장하지 못했어요')}return}
+async function shBuild(save){var t=shText();if(save){var d=await dlr();try{await d.save({filename:'Trace_별자리.txt',data:t});tt('저장했어요')}catch(e){if(!e||e.code!=='declined')tt('저장하지 못했어요')}return}
 try{await navigator.clipboard.writeText(t);tt('복사했어요. 보낼 사람은 내가 골라요')}catch(e){$('shr').innerHTML='<textarea id="shx" style="min-height:120px" readonly>'+esc(t)+'</textarea>';$('shx').select();tt('아래 글을 직접 복사해 주세요')}}
 
 /* 반짝이는 커서 별 · 별똥별 */
@@ -873,6 +873,13 @@ if(ZQ.s>=0||ZQ.e>=0)h+='<p class="m" style="margin-top:10px">이런 모양은 �
 if(ZPV>=0){var z=ZD[ZPV];h+='<div class="sheet"><div>'+zPrev(ZPV)+'</div><p class="m" style="margin:6px 0 0"><b>'+z.n+'</b> · '+z.r+'</p><button class="b" onclick="zApply('+ZPV+')">이 모양으로 하기</button></div>'}
 h+='<p class="m" style="font-size:12px;margin-top:10px">별자리 모양은 마음에 맞는 틀을 고르는 길잡이예요. 별자리로 성격이나 운을 판단하지 않아요.</p>'+(cur>=0?'<button class="b b2" onclick="zApply(-1)">처음 모양으로 되돌리기</button>':'');
 $('zpb').innerHTML=h};
+
+/* 파일 저장: Claude 안에서는 저장 기능, 일반 웹에서는 브라우저 다운로드 */
+async function dlr(){var d=null;try{d=window.claude&&await claude.use('downloads')}catch(e){}if(d)return d;return {save:async function(o){var b=new Blob(['\ufeff'+o.data],{type:'text/plain;charset=utf-8'}),a=document.createElement('a'),u=URL.createObjectURL(b);a.href=u;a.download=o.filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},800)}}}
+
+function hasData(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('dt_')===0&&k!=='dt_vault'&&k!=='dt_seen'&&k!=='dt_dy')return true}}catch(e){}return false}
+(function(){try{localStorage.setItem('dt_t','1');localStorage.removeItem('dt_t')}catch(e){setTimeout(function(){tt('이 브라우저는 저장을 막고 있어요. 시크릿 모드가 아닌지 확인해 주세요')},1200)}
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}})();
 
 go('start');if(!vault()&&L('dt_pin','')){$('lk').hidden=true;$('pk').hidden=false}else showAuth();
 </script></body></html>
